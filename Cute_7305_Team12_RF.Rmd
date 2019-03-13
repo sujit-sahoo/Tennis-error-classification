@@ -1,0 +1,111 @@
+---
+title: "Cute_3_Random_Forest"
+author: "M V S R K RAJU"
+date: "December 19, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#
+```{r}
+
+#Clearing the environment
+rm(list = ls(all=TRUE))
+
+# Reading the file
+Tennis_Data <- read.csv("train-1542197608821.csv")
+
+boxplot(Tennis_Data)
+
+
+
+# Summary of the data set
+dim(Tennis_Data)
+summary(Tennis_Data)
+str(Tennis_Data)
+table(Tennis_Data$gender)
+sum(is.na(Tennis_Data))
+```
+
+```{r}
+# Converting the variable into categorical 
+
+Tennis_Data$serve <- as.factor(as.character(Tennis_Data$serve))
+
+# Checking the summary statistics after conversion
+
+str(Tennis_Data)
+summary(Tennis_Data)
+sum(is.na(Tennis_Data))
+colSums(is.na(Tennis_Data))
+Tennis_Data$ID <- NULL
+colnames(Tennis_Data)
+```
+
+```{r}
+library(caret)
+set.seed(777)
+train_rows_id <- createDataPartition(Tennis_Data$outcome, p = 0.7, list = F)
+train_data <- Tennis_Data[train_rows_id, ]
+test_data <- Tennis_Data[-train_rows_id, ]
+colnames(train_data)
+colnames(test_data)
+```
+
+```{r}
+
+# Building the Randome forest model
+
+library(randomForest)
+RFModel = randomForest(outcome~., data = train_data, keep.forest = TRUE, ntree=200)
+print(RFModel)
+
+```
+
+```{r}
+RFModel$importance
+round(importance(RFModel),2)
+varImpPlot(RFModel)
+```
+
+```{r}
+
+pred_Train_rf = predict(RFModel, newdata = train_data[,-25])
+confusionMatrix(pred_Train_rf, train_data$outcome)
+
+```
+
+```{r}
+# Store predictions from the model
+
+preds_rf_valid <- predict(RFModel, test_data)
+
+confusionMatrix(preds_rf_valid, test_data$outcome)
+```
+
+```{r}
+
+# Applying the Model on Test data
+Tennis_Data_Test <- read.csv("test-1542197608821.csv")
+colnames(Tennis_Data_Test)
+Tennis_Data_Test$serve <- as.factor(as.character(Tennis_Data_Test$serve))
+str(Tennis_Data_Test)
+Tennis_Data_Test$ID <- NULL
+pred_Final_Test <- predict(RFModel,newdata=Tennis_Data_Test,type = 'class')
+table(pred_Final_Test)
+write.csv(pred_Final_Test,"prediction of rf1.csv")
+
+```
+```{r}
+install.packages("DataExplorer")
+library(DataExplorer)
+create_report(train_data)
+
+```
+
